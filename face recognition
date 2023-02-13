@@ -1,0 +1,163 @@
+import os
+import cv2
+import time
+import random
+import numpy as np
+import tensorflow as tf
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+
+from zipfile import ZipFile
+with ZipFile('/content/drive/MyDrive/Colab Notebooks/dataset/dataset.zip','r')as zipObj:
+  zipObj.extractall('data')
+
+pip install split-folders[full]
+
+import splitfolders
+input_folder ='/content/data/Extracted Faces/Extracted Faces'
+splitfolders.ratio(input_folder, output="Datasets",
+                   seed=42, ratio=(.7,.2,.1),
+                   group_prefix=None)
+
+
+!pip install tensorflow-gpu
+
+
+from tensorflow.keras.layers import Input, Lambda, Dense, Flatten
+from tensorflow.keras.models import Model
+from tensorflow.keras.applications.inception_v3 import InceptionV3
+from tensorflow.keras.applications.inception_v3 import preprocess_input
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing.image import ImageDataGenerator,load_img
+from tensorflow.keras.models import Sequential
+from glob import glob
+
+IMAGE_SIZE =[224, 224],
+train_path ='/content/Datasets/train'
+test_path='/content/Datasets/test'
+
+
+
+import tensorflow as tf
+tf.__version__
+
+mnist = tf.keras.datasets.mnist
+
+(x_train,y_train),(x_test,y_test)=mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test /255.
+
+
+
+
+
+
+inception = InceptionV3(input_shape=[224, 224] + [3], weights='imagenet',include_top=False)
+
+for layer in inception.layers:
+  layer.trainable = False
+
+folders = glob('/content/drive/MyDrive/Datasets/train/*')
+
+
+folders
+
+x = Flatten()(inception.output)
+
+prediction = Dense(len(folders), activation='softmax')(x)
+#model object
+model = Model(inputs=inception.input, outputs=prediction)
+
+model.summary()
+
+model.compile(
+    loss='categorical_crossentropy',
+    optimizer='adam',
+    metrics='accuracy'
+)
+#telling the model what cost and optimization method to use
+
+
+#use image data generator to import the images
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+train_datagen = ImageDataGenerator(rescale = 1./225,
+                                   shear_range =0.2,
+                                   zoom_range = 0.2,
+                                   horizontal_flip = True)
+test_datagen = ImageDataGenerator(rescale = 1./255)
+
+
+
+#provide the same target size as initialized for the image size
+training_set = train_datagen.flow_from_directory('/content/Datasets/train',
+                                                 target_size = (224, 224),
+                                                 batch_size = 16,
+                                                 class_mode = 'categorical')
+
+
+test_set = test_datagen.flow_from_directory('/content/Datasets/test',
+                                            target_size = (224, 224),
+                                            batch_size = 16,
+                                            class_mode = 'categorical')
+
+len(training_set)
+len(test_set)
+
+#fit the model
+r = model.fit_generator(
+    training_set,
+    validation_data=test_set,
+    epochs=1,
+    steps_per_epoch=len(training_set),
+    validation_steps=len(test_set)
+)
+
+!pip install hyperas
+!pip install hyperopt
+
+#data function
+def data():
+  (X_train, Y_train),(X_test,Y_test)=mnist.load_data()
+  X_train = X_train.reshape(60000, 784)
+  X_test = X_test.reshape(10000,784)
+  X_train = X_train.astype('float32')
+  X_test = X_test.astype('float32')
+  X_train/=255
+  X_test/=255
+  nb_classes = 10
+  Y_train = np_utils.to_categorical(y_train,nb_classes)
+  Y_test = np_utils.to_categorical(y_test, nb_classes)
+  return X_train, Y_train, X_test, Y_test
+
+#model function
+def model(X_train, Y_train, X_test, Y_test):
+  model = Sequential()
+  model.add(Dense(512, input_shape=(784)))
+  model.add(Activation('relu'))
+  model.add(Dropout({{unfirorm(0, 1)}}))
+  model.add(Dense({{choice([256, 512, 1024])}}))
+  model.add(Activation({{choice(['relu','sigmoid'])}}))
+  model.add(Dropout({{uniform(0, 1)}}))
+
+  if{{choice(['three', 'four'])}} == 'four':
+    model.add(Dense(100))
+    model.add({{choice([Dropout(0.5), Activation('linear')])}})
+    model.add(Activation('relu'))
+
+  model.add(Dense(10))
+  model.add(Activation('softmax'))
+
+  model.compile(loss='categorical_crossentropy',
+                optimizer={{choice([64, 128])}},
+                nb_epoch=1,
+                verbose=2,
+                validation_data=(X_test, Y_test))
+  score, acc= model.evaluate(X_test, Y_test, verbose=0)
+  print('Test accuracy:', acc)
+  return{'loss': -acc, 'status': STATUS_OK, 'model': model}
+
+
+
+
